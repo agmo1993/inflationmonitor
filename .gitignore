@@ -11,3 +11,4 @@ coverage/
 .drizzle/
 *.tgz
 .pglite-data/
+.next/
