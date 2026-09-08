@@ -27,7 +27,12 @@ export interface ChatSuccessBody {
 
 export interface ChatErrorBody {
   ok: false;
-  code?: typeof LIMIT_REACHED_CODE | "UNAUTHORIZED" | "BAD_REQUEST" | "LLM_ERROR";
+  code?:
+    | typeof LIMIT_REACHED_CODE
+    | "UNAUTHORIZED"
+    | "BAD_REQUEST"
+    | "LLM_ERROR"
+    | "LLM_NOT_CONFIGURED";
   error: string;
 }
 
@@ -40,12 +45,18 @@ export interface ChatHandlerResult {
   spendIncremented: boolean;
 }
 
+function isOpenRouterKeyMissing(): boolean {
+  const key = process.env.OPENROUTER_API_KEY;
+  return key === undefined || key === "";
+}
+
 /**
  * Core protected chat flow:
  * 1. Auth required — else 401, no LLM, no tools.
  * 2. Quota check (account_id + UTC YYYY-MM) — at/over $5.00 → 402 LIMIT_REACHED, zero OpenRouter.
  * 3. OpenRouter call; on success increment spend (idempotent by generation id).
  * 4. Failed LLM calls do not increment spend.
+ * 5. Live client with missing OPENROUTER_API_KEY → LLM_NOT_CONFIGURED (not 401).
  */
 export async function handleChatRequest(
   input: { message?: unknown },
@@ -53,6 +64,7 @@ export async function handleChatRequest(
 ): Promise<ChatHandlerResult> {
   const authFn = deps.auth ?? resolveAuthSession;
   const store = deps.usageStore ?? getUsageStore();
+  const usingLiveOpenRouter = deps.openRouter === undefined;
   const llm = deps.openRouter ?? getOpenRouterClient();
   const now = deps.now ?? (() => new Date());
 
@@ -100,6 +112,21 @@ export async function handleChatRequest(
     };
   }
 
+  // Live OpenRouter path with no API key → LLM_NOT_CONFIGURED (not 401 / no spend).
+  if (usingLiveOpenRouter && isOpenRouterKeyMissing()) {
+    return {
+      status: 503,
+      body: {
+        ok: false,
+        code: "LLM_NOT_CONFIGURED",
+        error:
+          "OPENROUTER_API_KEY is not configured; OpenRouter is required for chat",
+      },
+      openRouterCalled: false,
+      spendIncremented: false,
+    };
+  }
+
   const llmResult = await llm.chat({
     messages: [
       {
@@ -112,6 +139,27 @@ export async function handleChatRequest(
   });
 
   if (!llmResult.ok) {
+    // Map live-client missing-key failures to LLM_NOT_CONFIGURED as a safety net.
+    const missingKeyFailure =
+      usingLiveOpenRouter &&
+      isOpenRouterKeyMissing() &&
+      /openrouter/i.test(llmResult.error);
+    if (missingKeyFailure) {
+      return {
+        status:
+          llmResult.status === 500 || llmResult.status === 503
+            ? llmResult.status
+            : 503,
+        body: {
+          ok: false,
+          code: "LLM_NOT_CONFIGURED",
+          error: llmResult.error,
+        },
+        openRouterCalled: false,
+        spendIncremented: false,
+      };
+    }
+
     return {
       status: llmResult.status && llmResult.status >= 400 ? llmResult.status : 502,
       body: {
