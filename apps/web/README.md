@@ -29,14 +29,37 @@ See [`.env.example`](./.env.example):
 | Variable | Purpose |
 |----------|---------|
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` / `CLERK_SECRET_KEY` | Clerk auth |
+| `AUTH_DEV_BYPASS` | Local-only auth bypass (see below) |
 | `OPENROUTER_API_KEY` | OpenRouter LLM (only provider) |
 | `OPENROUTER_MODEL` | Optional model id (default `openai/gpt-4o-mini`) |
 | `DATABASE_URL` | Postgres/Neon for `app_usage_monthly` |
 | `NEXT_PUBLIC_APP_URL` | Public URL (OpenRouter referer) |
 
+
+### AUTH_DEV_BYPASS (local development only)
+
+For local UI work without Clerk, set `AUTH_DEV_BYPASS=1` and leave both Clerk keys unset (or empty). Middleware and `resolveAuthSession` then treat the request as authenticated with fixed `account_id` `dev_bypass_user`.
+
+Bypass is **active only** when all of the following are true (evaluated at call time, not cached):
+
+- `AUTH_DEV_BYPASS === "1"`
+- `NODE_ENV === "development"`
+- both `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` are missing or empty
+- `VERCEL` is not `"1"`
+- `VERCEL_ENV` is not `"production"`
+
+**Safety**
+
+- Either Clerk key alone (non-empty) **disables** bypass — set real Clerk keys and bypass is ignored.
+- Refused on Vercel hosting (`VERCEL=1`) and when `VERCEL_ENV=production`, even if `NODE_ENV=development`.
+- Never enable on shared, preview, or production environments.
+- With bypass active but `OPENROUTER_API_KEY` missing, `/api/chat` returns **503** `{ ok: false, code: "LLM_NOT_CONFIGURED", … }` (not 401) and does not increment spend.
+
+Shared gate: `lib/auth/dev-bypass.ts` (`DEV_BYPASS_ACCOUNT_ID`, `isAuthDevBypassActive()`).
+
 ## Metering rules
 
-- Cap key: `account_id` (Clerk `userId`) + `YYYY-MM` in **UTC**.
+- Cap key: `account_id` (Clerk `userId`, or `dev_bypass_user` under bypass) + `YYYY-MM` in **UTC**.
 - **Exactly $5.00 = over-cap** (`spend >= 5` → blocked).
 - Over-cap response: HTTP **402** with stable JSON `{ "ok": false, "code": "LIMIT_REACHED", "error": "…" }`.
 - Zero OpenRouter calls when capped.
@@ -51,7 +74,7 @@ npm test --workspace=@inflationmonitor/web
 # or from root: npm test   # runs data + web workspaces
 ```
 
-Vitest covers QA cases A1–A3 (auth), B1–B5 (quota), C1–C2 (spend), with Clerk / OpenRouter / DB mocked via in-memory stores.
+Vitest covers QA cases A1–A3 (auth), B1–B5 (quota), C1–C2 (spend), and D1–D6 (`AUTH_DEV_BYPASS`), with Clerk / OpenRouter / DB mocked via in-memory stores.
 
 ## Scripts
 

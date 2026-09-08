@@ -1,7 +1,12 @@
 /**
  * Auth session abstraction so route handlers and tests share one shape.
- * Production uses Clerk; tests inject a mock resolver.
+ * Production uses Clerk; local AUTH_DEV_BYPASS can short-circuit; tests inject a mock resolver.
  */
+
+import {
+  DEV_BYPASS_ACCOUNT_ID,
+  isAuthDevBypassActive,
+} from "./dev-bypass";
 
 export type AuthSession =
   | { authenticated: true; accountId: string }
@@ -17,6 +22,9 @@ export function setAuthResolver(next: AuthResolver | null) {
 
 export async function resolveAuthSession(): Promise<AuthSession> {
   if (resolver) return resolver();
+  if (isAuthDevBypassActive()) {
+    return { authenticated: true, accountId: DEV_BYPASS_ACCOUNT_ID };
+  }
   return resolveClerkSession();
 }
 
