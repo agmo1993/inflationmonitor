@@ -3,6 +3,7 @@ import { resolveAuthSession, setAuthResolver } from "../lib/auth/session";
 import { handleChatRequest } from "../lib/chat/handler";
 import { utcYearMonth } from "../lib/metering/period";
 import { freshStore, instrumentedStore, mockOpenRouter } from "./helpers";
+import { expectNoOpenRouterLeak } from "./helpers-cf";
 
 /**
  * QA D — AUTH_DEV_BYPASS acceptance (RED until App implements).
@@ -13,7 +14,11 @@ import { freshStore, instrumentedStore, mockOpenRouter } from "./helpers";
  *     DEV_BYPASS_ACCOUNT_ID, isAuthDevBypassActive()
  *   Middleware and resolveAuthSession must both honor that gate.
  * - Env: AUTH_DEV_BYPASS, NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY,
- *   NODE_ENV, VERCEL, VERCEL_ENV, OPENROUTER_API_KEY
+ *   NODE_ENV, VERCEL, VERCEL_ENV, CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN
+ *
+ * E6 / D5 migration: missing-LLM path asserts Cloudflare Workers AI creds
+ * (LLM_NOT_CONFIGURED, no OpenRouter strings). D1–D4/D6 still inject openRouter
+ * mocks until App lands feat/cf-workers-ai-gen-ui — then switch those to CF mocks.
  */
 
 const EXPECTED_BYPASS_ACCOUNT_ID = "dev_bypass_user";
@@ -28,6 +33,8 @@ const ENV_KEYS = [
   "NODE_ENV",
   "VERCEL",
   "VERCEL_ENV",
+  "CLOUDFLARE_ACCOUNT_ID",
+  "CLOUDFLARE_API_TOKEN",
   "OPENROUTER_API_KEY",
 ] as const;
 
@@ -284,14 +291,18 @@ describe("QA D — AUTH_DEV_BYPASS", () => {
     expect(llm.calls).toBe(0);
   });
 
-  it("D5: bypass active + missing OPENROUTER_API_KEY → NOT 401; LLM_NOT_CONFIGURED (503/500)", async () => {
+  it("D5: bypass active + missing CF creds → NOT 401; LLM_NOT_CONFIGURED (503/500); no OpenRouter strings", async () => {
+    // E6 migration: D5 now targets Cloudflare Workers AI missing-cred path.
+    // RED on main until App ships feat/cf-workers-ai-gen-ui (was OpenRouter).
     enableBypassEligibleEnv();
+    delete process.env.CLOUDFLARE_ACCOUNT_ID;
+    delete process.env.CLOUDFLARE_API_TOKEN;
     delete process.env.OPENROUTER_API_KEY;
 
     const store = instrumentedStore();
-    // No auth / openRouter inject — real bypass session + live missing-key path.
+    // No auth / LLM inject — real bypass session + live missing-CF-creds path.
     const result = await handleChatRequest(
-      { message: "need openrouter" },
+      { message: "need cloudflare workers ai" },
       { usageStore: store },
     );
 
@@ -301,8 +312,11 @@ describe("QA D — AUTH_DEV_BYPASS", () => {
       ok: false,
       code: "LLM_NOT_CONFIGURED",
     });
+    expectNoOpenRouterLeak(result.body);
     if (!result.body.ok) {
-      expect(result.body.error.toLowerCase()).toMatch(/openrouter/);
+      expect(result.body.error.toLowerCase()).toMatch(
+        /cloudflare|workers\s*ai|account_id|api_token|not configured/i,
+      );
     }
     expect(result.spendIncremented).toBe(false);
     expect(store.incrementSpendCalls).toBe(0);
