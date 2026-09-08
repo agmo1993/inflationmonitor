@@ -1,0 +1,34 @@
+{
+  "source": "abs",
+  "dataset": "CPI",
+  "seriesNativeId": "A2325846C",
+  "seriesTitle": "All groups CPI ; Australia",
+  "releaseLabel": "2024-12",
+  "releasedAt": "2025-01-29T00:00:00.000Z",
+  "observations": [
+    {
+      "period": "2024-07-01",
+      "value": 139
+    },
+    {
+      "period": "2024-08-01",
+      "value": 139.3
+    },
+    {
+      "period": "2024-09-01",
+      "value": 139.7
+    },
+    {
+      "period": "2024-10-01",
+      "value": 140
+    },
+    {
+      "period": "2024-11-01",
+      "value": 140.2
+    },
+    {
+      "period": "2024-12-01",
+      "value": 140.5
+    }
+  ]
+}
