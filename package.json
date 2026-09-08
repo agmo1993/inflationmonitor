@@ -8,11 +8,14 @@
     "apps/*"
   ],
   "scripts": {
-    "test": "npm run test --workspace=@inflationmonitor/data",
+    "test": "npm run test --workspaces --if-present",
     "build": "npm run build --workspace=@inflationmonitor/data",
     "migrate": "npm run migrate --workspace=@inflationmonitor/data",
     "load:au": "npm run load:au --workspace=@inflationmonitor/data",
-    "load:us": "npm run load:us --workspace=@inflationmonitor/data"
+    "load:us": "npm run load:us --workspace=@inflationmonitor/data",
+    "dev:web": "npm run dev --workspace=@inflationmonitor/web",
+    "test:web": "npm run test --workspace=@inflationmonitor/web",
+    "test:data": "npm run test --workspace=@inflationmonitor/data"
   },
   "engines": {
     "node": ">=20"

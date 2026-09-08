@@ -1,6 +1,33 @@
 {
   "name": "@inflationmonitor/web",
   "private": true,
-  "version": "0.0.0",
-  "description": "Stub — App owns Next.js later"
+  "version": "0.1.0",
+  "description": "Next.js App Router chat UI with Clerk auth and OpenRouter metering",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:ensure": "tsx scripts/ensure-usage-table.ts"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.12.0",
+    "next": "^15.2.0",
+    "postgres": "^3.4.5",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
 }

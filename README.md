@@ -7,7 +7,7 @@ CPI data platform monorepo (multi-country from day one).
 | Path | Role |
 |------|------|
 | `packages/data` | Postgres/Neon schema, migrations, AU ABS + US BLS loaders, freshness checks |
-| `apps/web` | Stub — Next.js app will live here later |
+| `apps/web` | Next.js App Router chat UI — Clerk auth, OpenRouter LLM gateway, $5/mo UTC metering |
 
 ## Quick start
 
@@ -19,5 +19,7 @@ bun test
 ```
 
 Workspace clients that understand npm workspaces can use `npm test` / `npm run test -w @inflationmonitor/data` equivalently.
+
+Web app setup: [`apps/web/README.md`](apps/web/README.md).
 
 See [`packages/data/README.md`](packages/data/README.md) and [`packages/data/SCHEMA.md`](packages/data/SCHEMA.md).
