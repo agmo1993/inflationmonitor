@@ -97,4 +97,95 @@ describe("freshness check", () => {
       await client.close();
     }
   });
+
+  it("marks report not ok when any of multiple series is stale or missing", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      await seedMeta(db);
+      const [rel] = await db
+        .insert(schema.release)
+        .values({
+          sourceId: US.sourceId,
+          label: "mixed",
+          releasedAt: new Date("2025-02-12T13:30:00Z"),
+        })
+        .returning({ id: schema.release.id });
+
+      await db.insert(schema.obs).values({
+        seriesId: US.series.allItems.id,
+        releaseId: rel.id,
+        period: "2025-01-01",
+        value: "317.671",
+      });
+      // food left missing; energy intentionally stale
+      await db.insert(schema.obs).values({
+        seriesId: US.series.energy.id,
+        releaseId: rel.id,
+        period: "2024-06-01",
+        value: "250",
+      });
+
+      const report = await checkFreshness(
+        db,
+        [
+          US.series.allItems.id,
+          US.series.food.id,
+          US.series.energy.id,
+        ],
+        {
+          asOf: new Date("2025-02-15T00:00:00Z"),
+          lagMonths: 1,
+        },
+      );
+      expect(report.ok).toBe(false);
+      const byId = Object.fromEntries(
+        report.issues.map((i) => [i.seriesId, i.status]),
+      );
+      expect(byId[US.series.allItems.id]).toBe("ok");
+      expect(byId[US.series.food.id]).toBe("missing");
+      expect(byId[US.series.energy.id]).toBe("stale");
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("treats a newer-than-expected latest period as ok", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      await seedMeta(db);
+      const [rel] = await db
+        .insert(schema.release)
+        .values({
+          sourceId: AU.sourceId,
+          label: "ahead",
+          releasedAt: new Date("2025-03-01T00:00:00Z"),
+        })
+        .returning({ id: schema.release.id });
+      await db.insert(schema.obs).values({
+        seriesId: AU.headline.id,
+        releaseId: rel.id,
+        period: "2025-02-01",
+        value: "141.0",
+      });
+      const report = await checkFreshness(db, [AU.headline.id], {
+        asOf: new Date("2025-02-15T00:00:00Z"),
+        lagMonths: 1,
+      });
+      expect(report.expectedLatestPeriod).toBe("2025-01-01");
+      expect(report.issues[0]?.status).toBe("ok");
+      expect(report.issues[0]?.monthsBehind).toBe(0);
+      expect(report.ok).toBe(true);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("honors lagMonths when computing expected latest period", async () => {
+    expect(expectedLatestPeriod(new Date("2025-03-10T00:00:00Z"), 2)).toBe(
+      "2025-01-01",
+    );
+    expect(expectedLatestPeriod(new Date("2025-01-15T00:00:00Z"), 2)).toBe(
+      "2024-11-01",
+    );
+  });
 });

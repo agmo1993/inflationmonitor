@@ -70,4 +70,58 @@ describe("AU ABS CPI load", () => {
       await client.close();
     }
   });
+
+  it("rejects fixture with wrong source id", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      const fixture = await loadAuAbsFixture(FIXTURE);
+      await expect(
+        loadAuAbsCpi(db, { ...fixture, source: "bls" }),
+      ).rejects.toThrow(/source/);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("persists release vintage metadata for the load", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      const fixture = await loadAuAbsFixture(FIXTURE);
+      const result = await loadAuAbsCpi(db, fixture);
+      const releases = await db
+        .select()
+        .from(schema.release)
+        .where(eq(schema.release.id, result.releaseId));
+      expect(releases).toHaveLength(1);
+      expect(releases[0]?.sourceId).toBe(AU.sourceId);
+      expect(releases[0]?.label).toBe("2024-12");
+      expect(releases[0]?.releasedAt.toISOString()).toBe(fixture.releasedAt);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("keeps the first observation value on idempotent reload (no silent overwrite)", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      const fixture = await loadAuAbsFixture(FIXTURE);
+      await loadAuAbsCpi(db, fixture);
+      const mutated = {
+        ...fixture,
+        observations: fixture.observations.map((o) =>
+          o.period === "2024-12-01" ? { ...o, value: 999.999 } : o,
+        ),
+      };
+      await loadAuAbsCpi(db, mutated);
+      const rows = await db
+        .select()
+        .from(schema.obs)
+        .where(eq(schema.obs.seriesId, AU.headline.id));
+      const dec = rows.find((r) => r.period === "2024-12-01");
+      expect(Number(dec?.value)).toBeCloseTo(140.5, 5);
+      expect(rows).toHaveLength(fixture.observations.length);
+    } finally {
+      await client.close();
+    }
+  });
 });

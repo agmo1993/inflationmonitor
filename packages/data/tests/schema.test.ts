@@ -174,4 +174,98 @@ describe("schema invariants", () => {
       await client.close();
     }
   });
+
+  it("enforces unique (source_id, label) on release", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      await seedMeta(db);
+      await db.insert(schema.release).values({
+        sourceId: AU.sourceId,
+        label: "2024-12",
+        releasedAt: new Date("2025-01-29T00:00:00Z"),
+      });
+      await expect(
+        db.insert(schema.release).values({
+          sourceId: AU.sourceId,
+          label: "2024-12",
+          releasedAt: new Date("2025-01-30T00:00:00Z"),
+        }),
+      ).rejects.toThrow();
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("enforces FK: obs requires existing series", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      await seedMeta(db);
+      const [rel] = await db
+        .insert(schema.release)
+        .values({
+          sourceId: AU.sourceId,
+          label: "fk-check",
+          releasedAt: new Date("2025-01-01T00:00:00Z"),
+        })
+        .returning({ id: schema.release.id });
+      await expect(
+        db.insert(schema.obs).values({
+          seriesId: "does.not.exist",
+          releaseId: rel.id,
+          period: "2024-12-01",
+          value: "1",
+        }),
+      ).rejects.toThrow();
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("seeds US series platform ids, NSA flag, and monthly frequency", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      await seedMeta(db);
+      const expectedIds = [
+        "us.bls.cpiu.all_items",
+        "us.bls.cpiu.food",
+        "us.bls.cpiu.energy",
+        "us.bls.cpiu.all_items_less_food_energy",
+        "us.bls.cpiu.shelter",
+      ];
+      const us = await db
+        .select()
+        .from(schema.series)
+        .where(eq(schema.series.sourceId, US.sourceId));
+      expect(us.map((s) => s.id).sort()).toEqual([...expectedIds].sort());
+      for (const row of us) {
+        expect(row.countryCode).toBe("US");
+        expect(row.seasonallyAdjusted).toBe(false);
+        expect(row.frequency).toBe("monthly");
+        expect(row.unit).toBe("index");
+      }
+      const au = await db
+        .select()
+        .from(schema.series)
+        .where(eq(schema.series.id, AU.headline.id));
+      expect(au[0]?.countryCode).toBe("AU");
+      expect(au[0]?.sourceId).toBe("abs");
+      expect(au[0]?.frequency).toBe("monthly");
+      expect(au[0]?.seasonallyAdjusted).toBe(false);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("seeds abs/bls sources bound to AU and US countries", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      await seedMeta(db);
+      const sources = await db.select().from(schema.source);
+      const byId = Object.fromEntries(sources.map((s) => [s.id, s]));
+      expect(byId.abs?.countryCode).toBe("AU");
+      expect(byId.bls?.countryCode).toBe("US");
+    } finally {
+      await client.close();
+    }
+  });
 });

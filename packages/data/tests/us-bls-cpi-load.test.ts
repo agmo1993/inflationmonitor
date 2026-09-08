@@ -80,4 +80,63 @@ describe("US BLS CPI-U load", () => {
       await client.close();
     }
   });
+
+  it("is idempotent for the same release label + periods", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      const fixture = await loadUsBlsFixture(FIXTURE);
+      await loadUsBlsCpi(db, fixture);
+      await loadUsBlsCpi(db, fixture);
+      const rows = await db
+        .select()
+        .from(schema.obs)
+        .where(
+          inArray(
+            schema.obs.seriesId,
+            US_SERIES_LIST.map((s) => s.id),
+          ),
+        );
+      expect(rows).toHaveLength(5 * 4);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("attaches all observations to a single BLS release vintage", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      const fixture = await loadUsBlsFixture(FIXTURE);
+      const result = await loadUsBlsCpi(db, fixture);
+      const rows = await db
+        .select()
+        .from(schema.obs)
+        .where(
+          inArray(
+            schema.obs.seriesId,
+            US_SERIES_LIST.map((s) => s.id),
+          ),
+        );
+      expect(rows.every((r) => r.releaseId === result.releaseId)).toBe(true);
+      const releases = await db
+        .select()
+        .from(schema.release)
+        .where(eq(schema.release.id, result.releaseId));
+      expect(releases[0]?.sourceId).toBe(US.sourceId);
+      expect(releases[0]?.label).toBe(fixture.releaseLabel);
+    } finally {
+      await client.close();
+    }
+  });
+
+  it("rejects fixture with wrong source id", async () => {
+    const { db, client } = await createTestDb();
+    try {
+      const fixture = await loadUsBlsFixture(FIXTURE);
+      await expect(
+        loadUsBlsCpi(db, { ...fixture, source: "abs" }),
+      ).rejects.toThrow(/source/);
+    } finally {
+      await client.close();
+    }
+  });
 });
