@@ -1,5 +1,7 @@
 /**
- * OpenRouter-only LLM gateway. No other providers.
+ * Legacy OpenRouter client types — retained for older QA helpers that
+ * inject `openRouter` mocks. Live chat uses Cloudflare Workers AI
+ * (`lib/cloudflare/client.ts`). Do not use this module for new live paths.
  */
 
 export interface OpenRouterChatRequest {

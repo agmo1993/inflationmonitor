@@ -2,7 +2,7 @@
   "name": "@inflationmonitor/web",
   "private": true,
   "version": "0.1.0",
-  "description": "Next.js App Router chat UI with Clerk auth and OpenRouter metering",
+  "description": "Next.js App Router chat UI with Clerk auth, Cloudflare Workers AI, generative UI, and metering",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

@@ -6,21 +6,37 @@ import {
 import { utcYearMonth } from "../metering/period";
 import { canAllowLlm } from "../metering/quota";
 import { getUsageStore } from "../metering/get-usage-store";
-import { getOpenRouterClient } from "../openrouter/client";
+import {
+  getWorkersAiClient,
+  hasCloudflareChatEnv,
+  type WorkersAiClient,
+} from "../cloudflare/client";
 import type { UsageStore } from "../metering/usage-store";
-import type { OpenRouterClient } from "../openrouter/client";
+import { buildAnswer, type Answer } from "./answer";
+import { runCpiFixtureTools } from "./tools/cpi-fixtures";
 
 export interface ChatHandlerDeps {
   auth?: typeof resolveAuthSession;
   usageStore?: UsageStore;
-  openRouter?: OpenRouterClient;
+  /** Cloudflare Workers AI client (preferred). */
+  llm?: WorkersAiClient;
+  /**
+   * Alias kept so existing QA injects (`openRouter: mock…`) stay green
+   * until QA rebases E-suite helpers. Prefer `llm`.
+   */
+  openRouter?: WorkersAiClient;
   /** Inject "now" for month-boundary tests. */
   now?: () => Date;
+  /** Skip fixture tools (unit tests that only care about LLM/metering). */
+  skipTools?: boolean;
 }
 
 export interface ChatSuccessBody {
   ok: true;
+  /** Convenience: prose string (also in answer.prose). */
   message: string;
+  /** Generative UI payload. */
+  answer: Answer;
   yearMonth: string;
   spendUsd: number;
 }
@@ -39,24 +55,24 @@ export interface ChatErrorBody {
 export interface ChatHandlerResult {
   status: number;
   body: ChatSuccessBody | ChatErrorBody;
-  /** True only when OpenRouter was actually invoked. */
+  /**
+   * True only when the LLM client was actually invoked.
+   * Named openRouterCalled for backward-compatible QA assertions.
+   */
   openRouterCalled: boolean;
+  /** Alias of openRouterCalled. */
+  llmCalled: boolean;
   /** True only when spend was incremented. */
   spendIncremented: boolean;
-}
-
-function isOpenRouterKeyMissing(): boolean {
-  const key = process.env.OPENROUTER_API_KEY;
-  return key === undefined || key === "";
 }
 
 /**
  * Core protected chat flow:
  * 1. Auth required — else 401, no LLM, no tools.
- * 2. Quota check (account_id + UTC YYYY-MM) — at/over $5.00 → 402 LIMIT_REACHED, zero OpenRouter.
- * 3. OpenRouter call; on success increment spend (idempotent by generation id).
- * 4. Failed LLM calls do not increment spend.
- * 5. Live client with missing OPENROUTER_API_KEY → LLM_NOT_CONFIGURED (not 401).
+ * 2. Quota check (account_id + UTC YYYY-MM) — at/over $5.00 → 402 LIMIT_REACHED.
+ * 3. Missing Cloudflare Workers AI creds on live path → LLM_NOT_CONFIGURED (not 401).
+ * 4. Fixture/data tools → typed Answer parts; LLM prose when configured.
+ * 5. Successful LLM increments spend (idempotent by generation id); failures do not.
  */
 export async function handleChatRequest(
   input: { message?: unknown },
@@ -64,8 +80,9 @@ export async function handleChatRequest(
 ): Promise<ChatHandlerResult> {
   const authFn = deps.auth ?? resolveAuthSession;
   const store = deps.usageStore ?? getUsageStore();
-  const usingLiveOpenRouter = deps.openRouter === undefined;
-  const llm = deps.openRouter ?? getOpenRouterClient();
+  const llmInjected = deps.llm ?? deps.openRouter;
+  const usingLiveLlm = llmInjected === undefined;
+  const llm = llmInjected ?? getWorkersAiClient();
   const now = deps.now ?? (() => new Date());
 
   const session = await authFn();
@@ -81,6 +98,7 @@ export async function handleChatRequest(
             : "Authentication required",
       },
       openRouterCalled: false,
+      llmCalled: false,
       spendIncremented: false,
     };
   }
@@ -92,6 +110,7 @@ export async function handleChatRequest(
       status: 400,
       body: { ok: false, code: "BAD_REQUEST", error: "message is required" },
       openRouterCalled: false,
+      llmCalled: false,
       spendIncremented: false,
     };
   }
@@ -108,43 +127,42 @@ export async function handleChatRequest(
         error: `Monthly spend limit of $5.00 USD reached for ${yearMonth} (UTC). Resets next UTC month.`,
       },
       openRouterCalled: false,
+      llmCalled: false,
       spendIncremented: false,
     };
   }
 
-  // Live OpenRouter path with no API key → LLM_NOT_CONFIGURED (not 401 / no spend).
-  if (usingLiveOpenRouter && isOpenRouterKeyMissing()) {
+  // Live path with missing CF creds → LLM_NOT_CONFIGURED (not 401 / no spend).
+  if (usingLiveLlm && !hasCloudflareChatEnv()) {
     return {
       status: 503,
       body: {
         ok: false,
         code: "LLM_NOT_CONFIGURED",
         error:
-          "OPENROUTER_API_KEY is not configured; OpenRouter is required for chat",
+          "Cloudflare Workers AI is not configured. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.",
       },
       openRouterCalled: false,
+      llmCalled: false,
       spendIncremented: false,
     };
   }
+
+  const toolParts = deps.skipTools ? [] : runCpiFixtureTools(message);
 
   const llmResult = await llm.chat({
     messages: [
       {
         role: "system",
         content:
-          "You are InflationMonitor assistant. CPI tools are not wired yet; reply briefly.",
+          "You are InflationMonitor assistant. Reply briefly about CPI. Structured charts/tables are attached separately as generative UI parts — do not dump large markdown tables.",
       },
       { role: "user", content: message },
     ],
   });
 
   if (!llmResult.ok) {
-    // Map live-client missing-key failures to LLM_NOT_CONFIGURED as a safety net.
-    const missingKeyFailure =
-      usingLiveOpenRouter &&
-      isOpenRouterKeyMissing() &&
-      /openrouter/i.test(llmResult.error);
-    if (missingKeyFailure) {
+    if (llmResult.notConfigured || (usingLiveLlm && !hasCloudflareChatEnv())) {
       return {
         status:
           llmResult.status === 500 || llmResult.status === 503
@@ -153,9 +171,12 @@ export async function handleChatRequest(
         body: {
           ok: false,
           code: "LLM_NOT_CONFIGURED",
-          error: llmResult.error,
+          error:
+            llmResult.error ||
+            "Cloudflare Workers AI is not configured. Set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN.",
         },
         openRouterCalled: false,
+        llmCalled: false,
         spendIncremented: false,
       };
     }
@@ -168,6 +189,7 @@ export async function handleChatRequest(
         error: llmResult.error,
       },
       openRouterCalled: true,
+      llmCalled: true,
       spendIncremented: false,
     };
   }
@@ -179,15 +201,24 @@ export async function handleChatRequest(
     llmResult.generationId,
   );
 
+  const answer = buildAnswer({
+    prose: llmResult.content,
+    parts: toolParts,
+    yearMonth,
+    spendUsd: newSpend,
+  });
+
   return {
     status: 200,
     body: {
       ok: true,
       message: llmResult.content,
+      answer,
       yearMonth,
       spendUsd: newSpend,
     },
     openRouterCalled: true,
+    llmCalled: true,
     spendIncremented: true,
   };
 }
