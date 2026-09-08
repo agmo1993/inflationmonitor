@@ -13,6 +13,7 @@
   --radius-xl: 20px;
   --font-display: "GT Walsheim Medium", "GT Walsheim", Inter, system-ui, sans-serif;
   --font-body: Inter, system-ui, sans-serif;
+  --sidebar-width: 260px;
 }
 
 * { box-sizing: border-box; }
@@ -20,6 +21,7 @@
 html, body {
   margin: 0;
   padding: 0;
+  height: 100%;
   min-height: 100%;
   background: var(--color-canvas);
   color: var(--color-ink);
@@ -36,13 +38,78 @@ button {
 
 .im-shell {
   min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: row;
+  background: var(--color-canvas);
+  overflow: hidden;
+}
+
+.im-sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  background: var(--color-canvas);
+  gap: 16px;
+  padding: 16px 12px;
+  border-right: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  overflow-y: auto;
+}
+
+.im-new-chat {
+  width: 100%;
+}
+
+.im-sidebar-label {
+  color: var(--color-ink-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.im-sidebar-empty {
+  color: var(--color-ink-muted);
+  font-size: 13px;
+  margin: 0;
+}
+
+.im-session-history ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.im-history-item {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--color-ink);
+  font-size: 13px;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+}
+
+.im-history-item:hover {
+  background: var(--color-surface-2);
+}
+
+.im-app {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
 }
 
 .im-nav {
   height: 56px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -61,18 +128,21 @@ button {
 
 .im-main {
   flex: 1;
+  min-height: 0;
   max-width: 880px;
   width: 100%;
   margin: 0 auto;
-  padding: 40px 20px 96px;
+  padding: 24px 20px 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
+  overflow: hidden;
 }
 
 .im-hero {
   display: grid;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .im-hero h2 {
@@ -114,19 +184,27 @@ button {
 }
 
 .im-pill-secondary {
-  background: var(--color-surface-1);
+  background: var(--color-surface-2);
   color: var(--color-ink);
 }
 
 .im-chat {
-  display: grid;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  gap: 12px;
+  overflow: hidden;
 }
 
 .im-thread {
   display: grid;
   gap: 14px;
-  min-height: 220px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 12px;
+  align-content: start;
 }
 
 .im-msg {
@@ -143,6 +221,11 @@ button {
   max-width: 85%;
 }
 
+.im-msg-assistant {
+  justify-self: start;
+  max-width: 100%;
+}
+
 .im-msg-meta {
   color: var(--color-ink-muted);
   font-size: 12px;
@@ -157,6 +240,11 @@ button {
   background: var(--color-surface-1);
   border: 1px solid var(--color-hairline);
   transition: box-shadow 180ms ease;
+  position: sticky;
+  bottom: 0;
+  flex-shrink: 0;
+  margin-top: auto;
+  z-index: 2;
 }
 
 .im-composer:focus-within {
@@ -166,7 +254,7 @@ button {
 .im-composer textarea {
   width: 100%;
   resize: vertical;
-  min-height: 88px;
+  min-height: 72px;
   border: none;
   outline: none;
   background: transparent;
@@ -187,6 +275,7 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .im-chip {
@@ -272,4 +361,10 @@ button {
 @keyframes im-fade-up {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 720px) {
+  .im-sidebar {
+    display: none;
+  }
 }
