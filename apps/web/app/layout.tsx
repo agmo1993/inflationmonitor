@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ReactNode } from "react";
+import { isAuthDevBypassActive } from "@/lib/auth/dev-bypass";
 import "./styles/globals.css";
 
 export const metadata: Metadata = {
@@ -10,6 +11,16 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
+  // AUTH_DEV_BYPASS: skip ClerkProvider so empty keys don't show the
+  // Clerk "configure your application" overlay during local QA.
+  if (isAuthDevBypassActive()) {
+    return (
+      <html lang="en" data-testid="clerk-overlay-suppressed">
+        <body data-testid="auth-bypass-shell">{children}</body>
+      </html>
+    );
+  }
+
   return (
     <ClerkProvider>
       <html lang="en">
