@@ -1,0 +1,21 @@
+{
+  "name": "inflationmonitor",
+  "private": true,
+  "version": "0.0.0",
+  "description": "CPI Data Platform monorepo \u2014 InflationMonitor",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test": "npm run test --workspace=@inflationmonitor/data",
+    "build": "npm run build --workspace=@inflationmonitor/data",
+    "migrate": "npm run migrate --workspace=@inflationmonitor/data",
+    "load:au": "npm run load:au --workspace=@inflationmonitor/data",
+    "load:us": "npm run load:us --workspace=@inflationmonitor/data"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "npm@9.2.0"
+}
