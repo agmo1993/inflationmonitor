@@ -102,6 +102,43 @@ describe("QA B — monthly quota hard stop", () => {
     }
   });
 
+  it("B4b: spend is isolated per account_id (same YYYY-MM UTC)", async () => {
+    const store = freshStore();
+    const ym = "2026-09";
+    const capped = "acct_b4_capped";
+    const free = "acct_b4_free";
+    await store.incrementSpend(capped, ym, MONTHLY_SPEND_CAP_USD);
+    expect(await store.getSpend(free, ym)).toBe(0);
+
+    const llmCapped = mockOpenRouter();
+    const blocked = await handleChatRequest(
+      { message: "blocked?" },
+      {
+        auth: authOk(capped),
+        usageStore: store,
+        openRouter: llmCapped,
+        now: () => utcDate("2026-09-15T12:00:00Z"),
+      },
+    );
+    expect(blocked.status).toBe(LIMIT_REACHED_STATUS);
+    expect(llmCapped.calls).toBe(0);
+
+    const llmFree = mockOpenRouter();
+    const allowed = await handleChatRequest(
+      { message: "allowed?" },
+      {
+        auth: authOk(free),
+        usageStore: store,
+        openRouter: llmFree,
+        now: () => utcDate("2026-09-15T12:00:00Z"),
+      },
+    );
+    expect(allowed.status).toBe(200);
+    expect(llmFree.calls).toBe(1);
+    expect(await store.getSpend(capped, ym)).toBe(MONTHLY_SPEND_CAP_USD);
+    expect(await store.getSpend(free, ym)).toBeGreaterThan(0);
+  });
+
   it("B5: prior month over-cap → allowed in new month if under cap", async () => {
     const store = freshStore();
     const accountId = "acct_b5";

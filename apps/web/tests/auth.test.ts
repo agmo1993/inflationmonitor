@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { handleChatRequest } from "../lib/chat/handler";
-import { authNone, authOk, freshStore, mockOpenRouter } from "./helpers";
+import { authNone, authOk, freshStore, instrumentedStore, mockOpenRouter } from "./helpers";
 
 describe("QA A — auth gate", () => {
   it("A1: unauthenticated POST → 401; no LLM; no tools", async () => {
@@ -29,6 +29,22 @@ describe("QA A — auth gate", () => {
     expect(llm.calls).toBe(0);
   });
 
+  it("A1c: unauthenticated must not touch usage store (no metering side effects)", async () => {
+    const llm = mockOpenRouter();
+    const store = instrumentedStore();
+
+    const result = await handleChatRequest(
+      { message: "probe" },
+      { auth: authNone("unauthenticated"), usageStore: store, openRouter: llm },
+    );
+
+    expect(result.status).toBe(401);
+    expect(llm.calls).toBe(0);
+    expect(store.getSpendCalls).toBe(0);
+    expect(store.incrementSpendCalls).toBe(0);
+    expect(result.spendIncremented).toBe(false);
+  });
+
   it("A2: authenticated → allowed subject to quota", async () => {
     const llm = mockOpenRouter();
     const result = await handleChatRequest(
@@ -43,11 +59,12 @@ describe("QA A — auth gate", () => {
 
   it("A3: expired/invalid session = unauthenticated (401, no LLM)", async () => {
     const llm = mockOpenRouter();
+    const store = instrumentedStore();
     const result = await handleChatRequest(
       { message: "hello" },
       {
         auth: authNone("invalid_session"),
-        usageStore: freshStore(),
+        usageStore: store,
         openRouter: llm,
       },
     );
@@ -57,5 +74,7 @@ describe("QA A — auth gate", () => {
       expect(result.body.error.toLowerCase()).toMatch(/invalid|expired/);
     }
     expect(llm.calls).toBe(0);
+    expect(store.getSpendCalls).toBe(0);
+    expect(store.incrementSpendCalls).toBe(0);
   });
 });

@@ -35,6 +35,31 @@ export function freshStore(): UsageStore {
   return createMemoryUsageStore();
 }
 
+/** Wrap a UsageStore with call counters for asserting auth/quota side effects. */
+export function instrumentedStore(inner: UsageStore = createMemoryUsageStore()): UsageStore & {
+  getSpendCalls: number;
+  incrementSpendCalls: number;
+} {
+  const wrapped = {
+    getSpendCalls: 0,
+    incrementSpendCalls: 0,
+    async getSpend(accountId: string, yearMonth: string) {
+      wrapped.getSpendCalls += 1;
+      return inner.getSpend(accountId, yearMonth);
+    },
+    async incrementSpend(
+      accountId: string,
+      yearMonth: string,
+      amountUsd: number,
+      idempotencyKey?: string,
+    ) {
+      wrapped.incrementSpendCalls += 1;
+      return inner.incrementSpend(accountId, yearMonth, amountUsd, idempotencyKey);
+    },
+  };
+  return wrapped;
+}
+
 export function utcDate(iso: string): Date {
   return new Date(iso);
 }
