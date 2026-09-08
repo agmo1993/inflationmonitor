@@ -1,0 +1,117 @@
+{
+  "source": "bls",
+  "releaseLabel": "2025-01",
+  "releasedAt": "2025-02-12T13:30:00.000Z",
+  "series": [
+    {
+      "nativeId": "CUUR0000SA0",
+      "title": "CPI-U All items",
+      "observations": [
+        {
+          "period": "2024-10-01",
+          "value": 315.664
+        },
+        {
+          "period": "2024-11-01",
+          "value": 315.493
+        },
+        {
+          "period": "2024-12-01",
+          "value": 315.605
+        },
+        {
+          "period": "2025-01-01",
+          "value": 317.671
+        }
+      ]
+    },
+    {
+      "nativeId": "CUUR0000SAF1",
+      "title": "CPI-U Food",
+      "observations": [
+        {
+          "period": "2024-10-01",
+          "value": 332.109
+        },
+        {
+          "period": "2024-11-01",
+          "value": 332.786
+        },
+        {
+          "period": "2024-12-01",
+          "value": 333.304
+        },
+        {
+          "period": "2025-01-01",
+          "value": 334.412
+        }
+      ]
+    },
+    {
+      "nativeId": "CUUR0000SA0E",
+      "title": "CPI-U Energy",
+      "observations": [
+        {
+          "period": "2024-10-01",
+          "value": 279.712
+        },
+        {
+          "period": "2024-11-01",
+          "value": 274.123
+        },
+        {
+          "period": "2024-12-01",
+          "value": 273.012
+        },
+        {
+          "period": "2025-01-01",
+          "value": 278.541
+        }
+      ]
+    },
+    {
+      "nativeId": "CUUR0000SA0L1E",
+      "title": "CPI-U All items less food and energy",
+      "observations": [
+        {
+          "period": "2024-10-01",
+          "value": 321.666
+        },
+        {
+          "period": "2024-11-01",
+          "value": 322.123
+        },
+        {
+          "period": "2024-12-01",
+          "value": 322.432
+        },
+        {
+          "period": "2025-01-01",
+          "value": 323.891
+        }
+      ]
+    },
+    {
+      "nativeId": "CUUR0000SAH1",
+      "title": "CPI-U Shelter",
+      "observations": [
+        {
+          "period": "2024-10-01",
+          "value": 388.112
+        },
+        {
+          "period": "2024-11-01",
+          "value": 389.001
+        },
+        {
+          "period": "2024-12-01",
+          "value": 389.754
+        },
+        {
+          "period": "2025-01-01",
+          "value": 391.22
+        }
+      ]
+    }
+  ]
+}
