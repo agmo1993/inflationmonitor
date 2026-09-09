@@ -8,6 +8,8 @@ Tests: `./node_modules/.bin/vitest run`
 
 ## Auth bypass
 AUTH_DEV_BYPASS=1 + empty Clerk keys + NODE_ENV=development (not on Vercel) authenticates as dev_bypass_user.
+
+For **TEMPORARY** Vercel preview/test only: also set `AUTH_ALLOW_VERCEL_BYPASS=1` (with empty Clerk) so bypass works when `VERCEL=1` / `NODE_ENV=production`. Do not leave on long-term public prod. Vercel Root Directory should be `apps/web`.
 Missing CF creds then returns LLM_NOT_CONFIGURED (no OpenRouter strings).
 
 ## Metering cost proxy
