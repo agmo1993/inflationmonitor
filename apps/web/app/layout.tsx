@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: "InflationMonitor",
   description:
     "CPI chat assistant — Clerk auth, Cloudflare Workers AI, generative UI",
+  icons: {
+    icon: [{ url: "/logo-im.svg", type: "image/svg+xml" }],
+    shortcut: "/logo-im.svg",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
