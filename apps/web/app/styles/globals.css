@@ -57,6 +57,18 @@ button {
   overflow-y: auto;
 }
 
+.im-brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 4px;
+}
+
+.im-brand-logo img {
+  display: block;
+  border-radius: 8px;
+}
+
 .im-new-chat {
   width: 100%;
 }

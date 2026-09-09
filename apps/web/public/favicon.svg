@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="InflationMonitor">
+  <!-- Locked IM monogram: white geometric I+M, #0099ff parallelogram accent on #090909 -->
+  <rect width="512" height="512" fill="#090909"/>
+  <g transform="translate(56 118)">
+    <!-- I -->
+    <rect x="0" y="0" width="61" height="276" fill="#ffffff"/>
+    <!-- M: vertical outer edges + central V notch from top; right mass ends above blue shelf -->
+    <path fill="#ffffff" d="M93 0H154.5L244 138L333.5 0H400V206H150V276H93Z"/>
+    <!-- Blue parallelogram: horizontal top/bottom, sides slant so lower row shifts left -->
+    <polygon fill="#0099ff" points="170,223 398,223 362,276 135,276"/>
+  </g>
+</svg>

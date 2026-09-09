@@ -113,6 +113,15 @@ export default function HomePage() {
   return (
     <div className="im-shell">
       <aside className="im-sidebar" data-testid="sidebar">
+        <a href="/" className="im-brand-logo" aria-label="InflationMonitor home">
+          <img
+            src="/logo-im.svg"
+            alt="InflationMonitor"
+            width={36}
+            height={36}
+            data-testid="app-logo"
+          />
+        </a>
         <button
           type="button"
           className="im-pill im-pill-secondary im-new-chat"
