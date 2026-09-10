@@ -9,10 +9,14 @@ import { isAuthDevBypassActive } from "./lib/auth/dev-bypass";
  *   SyntaxError: Cannot use import statement outside a module
  * when middleware ran as Node λ (CJS loader vs ESM output).
  *
- * Mitigation (Next 15.5.25): keep middleware on Edge — do NOT set
- * config.runtime = "nodejs", do NOT enable experimental nodeMiddleware,
- * and do NOT add "type":"module" to apps/web or root package.json.
- * Explicit runtime: "edge" locks the Edge path for Vercel.
+ * Mitigation (Next 15.5.25):
+ * - Keep middleware on Edge by DEFAULT — do NOT set config.runtime at all.
+ * - Next 15.5 rejects config.runtime = "edge" on middleware
+ *   ("Use runtime 'experimental-edge'" / page runtime error). Never set it.
+ * - Do NOT set config.runtime = "nodejs" (Node λ ESM/CJS crash).
+ * - Do NOT enable experimental.nodeMiddleware.
+ * - Do NOT add "type":"module" to apps/web or root package.json.
+ * Edge keep-alive is documented in next.config.ts (keepMiddlewareOnEdge).
  *
  * When AUTH_DEV_BYPASS (+ optional AUTH_ALLOW_VERCEL_BYPASS) is active, Clerk
  * keys are empty — we must NOT call clerkMiddleware() at module load or request
@@ -39,8 +43,6 @@ export default async function middleware(req: NextRequest, event: NextFetchEvent
 }
 
 export const config = {
-  // MIDDLEWARE_RUNTIME_EDGE — keepMiddlewareOnEdge / middleware on Edge
-  runtime: "edge",
   matcher: [
     "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
     "/(api|trpc)(.*)",
