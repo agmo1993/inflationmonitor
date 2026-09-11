@@ -19,7 +19,9 @@
     "migrate:generate": "drizzle-kit generate",
     "load:au": "tsx src/cli/load-au.ts",
     "load:us": "tsx src/cli/load-us.ts",
-    "check:freshness": "tsx src/cli/freshness.ts"
+    "check:freshness": "tsx src/cli/freshness.ts",
+    "load:au:live": "tsx src/cli/load-au.ts --live",
+    "load:us:live": "tsx src/cli/load-us.ts --live"
   },
   "dependencies": {
     "drizzle-orm": "^0.39.3",
