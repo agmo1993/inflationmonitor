@@ -7,3 +7,5 @@ export * from "./loaders/types.js";
 export * from "./loaders/au-abs-cpi.js";
 export * from "./loaders/us-bls-cpi.js";
 export * from "./freshness/check.js";
+export * from "./loaders/fetch-au-abs.js";
+export * from "./loaders/fetch-us-bls.js";
