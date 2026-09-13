@@ -14,6 +14,9 @@ import {
   parseStatcanVectorPoints,
 } from "../src/loaders/fetch-ca-statcan.js";
 import {
+  EUROSTAT_HICP_DATAFLOW,
+  EUROSTAT_HICP_KEY_PREFIX,
+  buildEurostatHicpUrl,
   geoFromNativeId,
   parseEurostatHicpTsv,
 } from "../src/loaders/fetch-eu-hicp.js";
@@ -107,18 +110,43 @@ describe("StatCan WDS parser", () => {
 });
 
 describe("Eurostat HICP TSV parser", () => {
-  it("extracts geo from native id", () => {
-    expect(geoFromNativeId("prc_hicp_midx.M.I15.CP00.EU27_2020")).toBe("EU27_2020");
-    expect(geoFromNativeId("prc_hicp_midx.M.I15.CP00.EA20")).toBe("EA20");
+  it("extracts geo from ECOICOP2 native id", () => {
+    expect(geoFromNativeId("prc_hicp_minr.M.I15.TOTAL.EU27_2020")).toBe(
+      "EU27_2020",
+    );
+    expect(geoFromNativeId("prc_hicp_minr.M.I15.TOTAL.EA20")).toBe("EA20");
   });
 
-  it("parses wide TSV into per-geo monthly observations", () => {
-    const tsv = "freq,unit,coicop,geo\\TIME_PERIOD\t2024-11\t2024-12\nM,I15,CP00,EU27_2020\t130.44\t130.84\nM,I15,CP00,EA20\t126.63\t127.08\n";
+  it("parses ECOICOP2 wide TSV (coicop18 TOTAL) and skips missing ':' cells", () => {
+    const tsv =
+      "freq,unit,coicop18,geo\\TIME_PERIOD\t2026-06\t2026-07\t2026-08\n" +
+      "M,I15,TOTAL,EU27_2020\t136.96\t137.30\t:\n" +
+      "M,I15,TOTAL,EA20\t136.96\t137.30\t137.80 e\n";
     const byGeo = parseEurostatHicpTsv(tsv);
     expect(byGeo.get("EU27_2020")).toEqual([
-      { period: "2024-11-01", value: 130.44 },
-      { period: "2024-12-01", value: 130.84 },
+      { period: "2026-06-01", value: 136.96 },
+      { period: "2026-07-01", value: 137.3 },
     ]);
-    expect(byGeo.get("EA20")?.at(-1)).toEqual({ period: "2024-12-01", value: 127.08 });
+    expect(byGeo.get("EA20")?.at(-1)).toEqual({
+      period: "2026-08-01",
+      value: 137.8,
+    });
+  });
+});
+
+describe("Eurostat HICP ECOICOP2 URL builder", () => {
+  it("targets prc_hicp_minr with I15 TOTAL (not archived prc_hicp_midx CP00)", () => {
+    expect(EUROSTAT_HICP_DATAFLOW).toBe("prc_hicp_minr");
+    expect(EUROSTAT_HICP_KEY_PREFIX).toBe("M.I15.TOTAL");
+    const url = buildEurostatHicpUrl({
+      geos: ["EU27_2020", "EA20"],
+      startPeriod: "2016-01",
+    });
+    expect(url).toContain("/data/prc_hicp_minr/");
+    expect(url).toContain("M.I15.TOTAL.EU27_2020+EA20");
+    expect(url).toContain("format=TSV");
+    expect(url).toContain("startPeriod=2016-01");
+    expect(url).not.toContain("prc_hicp_midx");
+    expect(url).not.toContain("CP00");
   });
 });

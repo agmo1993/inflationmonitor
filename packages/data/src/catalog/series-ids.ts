@@ -136,12 +136,13 @@ export const CA = {
 export const CA_SERIES_LIST = Object.values(CA.series);
 
 /**
- * EU27 HICP (Eurostat prc_hicp_midx, unit I15=2015=100, COICOP CP00).
- * Geo code is EU27_2020 (not bare "EU"). Country code EU, source eurostat.
+ * EU27 HICP (Eurostat prc_hicp_minr ECOICOP ver.2, unit I15=2015=100, coicop18 TOTAL).
+ * Geo EU27_2020 (not bare "EU"). Platform id stable; native maps post-freeze flow.
+ * Archived predecessor: prc_hicp_midx.M.I15.CP00.* (frozen at 2025-12).
  */
 const EU_ALL_ITEMS = {
   id: "eu.eurostat.hicp.all_items",
-  nativeId: "prc_hicp_midx.M.I15.CP00.EU27_2020",
+  nativeId: "prc_hicp_minr.M.I15.TOTAL.EU27_2020",
   title: "HICP All-items (EU27_2020, 2015=100)",
   frequency: "monthly" as const,
 };
@@ -158,12 +159,12 @@ export const EU = {
 export const EU_SERIES_LIST = Object.values(EU.series);
 
 /**
- * Euro area HICP — EA20 composition (not EA19).
- * Country code EA, source eurostat_ea (distinct from EU27 source).
+ * Euro area HICP — EA20 (not EA19), ECOICOP2 prc_hicp_minr.
+ * Country code EA, source eurostat_ea. Platform id stable.
  */
 const EA_ALL_ITEMS = {
   id: "ea.eurostat.hicp.all_items",
-  nativeId: "prc_hicp_midx.M.I15.CP00.EA20",
+  nativeId: "prc_hicp_minr.M.I15.TOTAL.EA20",
   title: "HICP All-items (EA20, 2015=100)",
   frequency: "monthly" as const,
 };

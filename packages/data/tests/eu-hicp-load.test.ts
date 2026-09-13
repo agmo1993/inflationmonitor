@@ -30,8 +30,8 @@ describe("EU / EA Eurostat HICP load", () => {
       expect(result.releaseLabel).toBe("2024-12");
       expect(fixture.series.map((s) => s.nativeId).sort()).toEqual(
         [
-          "prc_hicp_midx.M.I15.CP00.EA20",
-          "prc_hicp_midx.M.I15.CP00.EU27_2020",
+          "prc_hicp_minr.M.I15.TOTAL.EA20",
+          "prc_hicp_minr.M.I15.TOTAL.EU27_2020",
         ].sort(),
       );
       expect(
@@ -78,7 +78,7 @@ describe("EU / EA Eurostat HICP load", () => {
       const incomplete = {
         ...fixture,
         series: fixture.series.filter(
-          (s) => s.nativeId !== "prc_hicp_midx.M.I15.CP00.EA20",
+          (s) => s.nativeId !== "prc_hicp_minr.M.I15.TOTAL.EA20",
         ),
       };
       await expect(loadEuHicp(db, incomplete)).rejects.toThrow(/EA20/);
@@ -94,8 +94,8 @@ describe("EU / EA Eurostat HICP load", () => {
       const withEa19 = {
         ...fixture,
         series: fixture.series.map((s) =>
-          s.nativeId === "prc_hicp_midx.M.I15.CP00.EA20"
-            ? { ...s, nativeId: "prc_hicp_midx.M.I15.CP00.EA19" }
+          s.nativeId === "prc_hicp_minr.M.I15.TOTAL.EA20"
+            ? { ...s, nativeId: "prc_hicp_minr.M.I15.TOTAL.EA19" }
             : s,
         ),
       };
@@ -185,7 +185,7 @@ describe("EU / EA Eurostat HICP load", () => {
       const mutated = {
         ...fixture,
         series: fixture.series.map((s) =>
-          s.nativeId === "prc_hicp_midx.M.I15.CP00.EU27_2020"
+          s.nativeId === "prc_hicp_minr.M.I15.TOTAL.EU27_2020"
             ? {
                 ...s,
                 observations: s.observations.map((o) =>

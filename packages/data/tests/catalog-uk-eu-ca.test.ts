@@ -89,9 +89,9 @@ describe("UK / EU / EA / CA catalog seed", () => {
       );
 
       expect(EU.headline.nativeId).toBe(
-        "prc_hicp_midx.M.I15.CP00.EU27_2020",
+        "prc_hicp_minr.M.I15.TOTAL.EU27_2020",
       );
-      expect(EA.headline.nativeId).toBe("prc_hicp_midx.M.I15.CP00.EA20");
+      expect(EA.headline.nativeId).toBe("prc_hicp_minr.M.I15.TOTAL.EA20");
       expect(EU.headline.nativeId).not.toContain("EA19");
       expect(EA.headline.nativeId).not.toContain("EA19");
       expect(EU.headline.nativeId).not.toMatch(/\.EU$/);
@@ -103,7 +103,7 @@ describe("UK / EU / EA / CA catalog seed", () => {
         .select()
         .from(schema.series)
         .where(eq(schema.series.id, EU.headline.id));
-      expect(eu[0]?.nativeId).toBe("prc_hicp_midx.M.I15.CP00.EU27_2020");
+      expect(eu[0]?.nativeId).toBe("prc_hicp_minr.M.I15.TOTAL.EU27_2020");
       expect(eu[0]?.countryCode).toBe("EU");
       expect(eu[0]?.sourceId).toBe("eurostat");
 
@@ -111,14 +111,14 @@ describe("UK / EU / EA / CA catalog seed", () => {
         .select()
         .from(schema.series)
         .where(eq(schema.series.id, EA.headline.id));
-      expect(ea[0]?.nativeId).toBe("prc_hicp_midx.M.I15.CP00.EA20");
+      expect(ea[0]?.nativeId).toBe("prc_hicp_minr.M.I15.TOTAL.EA20");
       expect(ea[0]?.sourceId).toBe("eurostat_ea");
       expect(ea[0]?.countryCode).toBe("EA");
 
       expect(EU_HICP_SERIES_LIST.map((s) => s.nativeId).sort()).toEqual(
         [
-          "prc_hicp_midx.M.I15.CP00.EA20",
-          "prc_hicp_midx.M.I15.CP00.EU27_2020",
+          "prc_hicp_minr.M.I15.TOTAL.EA20",
+          "prc_hicp_minr.M.I15.TOTAL.EU27_2020",
         ].sort(),
       );
     } finally {
