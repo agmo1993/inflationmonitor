@@ -1,17 +1,23 @@
 /**
  * Live Eurostat HICP fetch via SDMX 2.1 REST (TSV).
  *
- * Dataflow: prc_hicp_midx (monthly index; archived ECOICOP through 2025,
- * still served for historical I15 series as of 2026-09).
+ * Dataflow: prc_hicp_minr — ECOICOP ver.2 monthly indices + rates (from 2026).
+ * Replaces archived prc_hicp_midx (ECOICOP1, frozen at 2025-12).
+ *
+ * Unit I15 = index 2015=100 (I25=2025=100 also on this flow). Keep I15 so
+ * Neon levels stay continuous with pre-2026 loads.
+ * coicop18 TOTAL = all-items (ECOICOP1 used coicop CP00).
  *
  * Endpoint (no API key):
- *   GET https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/prc_hicp_midx/
- *       M.I15.CP00.EU27_2020+EA20?format=TSV&startPeriod=YYYY-MM
+ *   GET https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/prc_hicp_minr/
+ *       M.I15.TOTAL.EU27_2020+EA20?format=TSV&startPeriod=YYYY-MM
  *
  * Geo notes:
  *   - EU27_2020 = EU27 aggregate (not bare "EU")
  *   - EA20 = euro area 20 (not EA19)
- *   - Unit I15 = index 2015=100; COICOP CP00 = all-items
+ *
+ * Platform series ids remain stable:
+ *   eu.eurostat.hicp.all_items / ea.eurostat.hicp.all_items
  */
 import {
   EA,
@@ -23,8 +29,10 @@ import type { ObsPoint } from "./types.js";
 
 export const EUROSTAT_SDMX_DATA_BASE =
   "https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data";
-export const EUROSTAT_HICP_DATAFLOW = "prc_hicp_midx";
-export const EUROSTAT_HICP_KEY_PREFIX = "M.I15.CP00";
+/** ECOICOP ver.2 successor to archived prc_hicp_midx. */
+export const EUROSTAT_HICP_DATAFLOW = "prc_hicp_minr";
+/** freq.unit.coicop18 — I15 keeps 2015=100 continuity; TOTAL = all-items. */
+export const EUROSTAT_HICP_KEY_PREFIX = "M.I15.TOTAL";
 
 export type FetchEuHicpOptions = {
   startPeriod?: string; // YYYY-MM
@@ -32,15 +40,12 @@ export type FetchEuHicpOptions = {
   now?: Date;
 };
 
-function yearMonth(d: Date): string {
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-}
 
 function defaultStartPeriod(now: Date): string {
   return `${now.getUTCFullYear() - 10}-01`;
 }
 
-/** Extract geo code from native id `prc_hicp_midx.M.I15.CP00.GEO`. */
+/** Extract geo code from native id `prc_hicp_minr.M.I15.TOTAL.GEO`. */
 export function geoFromNativeId(nativeId: string): string {
   const parts = nativeId.split(".");
   const geo = parts[parts.length - 1];
@@ -62,7 +67,8 @@ export function buildEurostatHicpUrl(options: {
 
 /**
  * Parse Eurostat SDMX TSV (wide time columns) into Map<geo, ObsPoint[]>.
- * Header: freq,unit,coicop,geo\TIME_PERIOD\tYYYY-MM\t...
+ * Header: freq,unit,coicop18,geo\TIME_PERIOD\tYYYY-MM\t...
+ * Skips missing ":" cells; strips status flags (e.g. "103.68 e").
  */
 export function parseEurostatHicpTsv(
   tsvText: string,
@@ -80,7 +86,7 @@ export function parseEurostatHicpTsv(
     const cols = lines[i]!.split("\t").map((c) => c.trim());
     if (!cols.length) continue;
     const dim = cols[0] ?? "";
-    // dim like "M,I15,CP00,EU27_2020"
+    // dim like "M,I15,TOTAL,EU27_2020" (legacy: "M,I15,CP00,EU27_2020")
     const parts = dim.split(",");
     const geo = parts[parts.length - 1]?.trim();
     if (!geo) continue;

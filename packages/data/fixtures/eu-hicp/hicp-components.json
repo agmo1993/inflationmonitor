@@ -4,7 +4,7 @@
   "releasedAt": "2025-01-17T00:00:00.000Z",
   "series": [
     {
-      "nativeId": "prc_hicp_midx.M.I15.CP00.EU27_2020",
+      "nativeId": "prc_hicp_minr.M.I15.TOTAL.EU27_2020",
       "title": "HICP All-items (EU27_2020, 2015=100)",
       "observations": [
         { "period": "2024-07-01", "value": 126.4 },
@@ -16,7 +16,7 @@
       ]
     },
     {
-      "nativeId": "prc_hicp_midx.M.I15.CP00.EA20",
+      "nativeId": "prc_hicp_minr.M.I15.TOTAL.EA20",
       "title": "HICP All-items (EA20, 2015=100)",
       "observations": [
         { "period": "2024-07-01", "value": 124.8 },

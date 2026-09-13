@@ -102,20 +102,22 @@ Source id: `statcan`. Country: `CA`.
 
 Live: `POST https://www150.statcan.gc.ca/t1/wds/rest/getDataFromVectorsAndLatestNPeriods`
 
-## EU / euro-area HICP (Eurostat `prc_hicp_midx`)
+## EU / euro-area HICP (Eurostat `prc_hicp_minr`, ECOICOP ver.2)
 
-Unit `I15` = index 2015=100; COICOP `CP00` = all-items.
+Unit `I15` = index 2015=100 (also available as `I25` = 2025=100 on the same dataflow).
+`coicop18` **`TOTAL`** = all-items (ECOICOP1 used `coicop` `CP00`).
 
 | Platform `series.id` | Native id | Country | Source |
 |----------------------|-----------|---------|--------|
-| `eu.eurostat.hicp.all_items` | `prc_hicp_midx.M.I15.CP00.EU27_2020` | `EU` | `eurostat` |
-| `ea.eurostat.hicp.all_items` | `prc_hicp_midx.M.I15.CP00.EA20` | `EA` | `eurostat_ea` |
+| `eu.eurostat.hicp.all_items` | `prc_hicp_minr.M.I15.TOTAL.EU27_2020` | `EU` | `eurostat` |
+| `ea.eurostat.hicp.all_items` | `prc_hicp_minr.M.I15.TOTAL.EA20` | `EA` | `eurostat_ea` |
 
 Geo notes: **EU27_2020** (not bare `EU`); **EA20** (not EA19).
+Platform ids are stable across the ECOICOP1→ECOICOP2 migration; only native/fetch mapping changed.
 
-Live: `GET https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/prc_hicp_midx/M.I15.CP00.EU27_2020+EA20?format=TSV&startPeriod=YYYY-MM`
+Live: `GET https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data/prc_hicp_minr/M.I15.TOTAL.EU27_2020+EA20?format=TSV&startPeriod=YYYY-MM`
 
-**Ops note (2026-09):** archived `prc_hicp_midx` I15 series currently end at **2025-12** after ECOICOP ver.2 / base-year migration; live loader still uses this dataflow until a follow-up switches to the new ECOICOP2 tables.
+**Migration note:** archived `prc_hicp_midx` / `I15` / `CP00` freezes at **2025-12**. Successor table `prc_hicp_minr` merges former monthly index + rate datasets under ECOICOP ver.2 and continues I15 (and I25) from 1996 through current months.
 
 
 ## ER sketch
