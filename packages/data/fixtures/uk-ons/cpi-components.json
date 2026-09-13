@@ -1,0 +1,55 @@
+{
+  "source": "ons",
+  "releaseLabel": "2024-12",
+  "releasedAt": "2025-01-15T00:00:00.000Z",
+  "series": [
+    {
+      "nativeId": "D7BT",
+      "title": "CPI INDEX 00: ALL ITEMS 2015=100",
+      "observations": [
+        { "period": "2024-07-01", "value": 133.2 },
+        { "period": "2024-08-01", "value": 133.5 },
+        { "period": "2024-09-01", "value": 133.8 },
+        { "period": "2024-10-01", "value": 134.1 },
+        { "period": "2024-11-01", "value": 134.4 },
+        { "period": "2024-12-01", "value": 134.7 }
+      ]
+    },
+    {
+      "nativeId": "D7BU",
+      "title": "CPI INDEX 01 : FOOD AND NON-ALCOHOLIC BEVERAGES 2015=100",
+      "observations": [
+        { "period": "2024-07-01", "value": 134.0 },
+        { "period": "2024-08-01", "value": 134.2 },
+        { "period": "2024-09-01", "value": 134.5 },
+        { "period": "2024-10-01", "value": 134.8 },
+        { "period": "2024-11-01", "value": 135.0 },
+        { "period": "2024-12-01", "value": 135.3 }
+      ]
+    },
+    {
+      "nativeId": "D7CH",
+      "title": "CPI INDEX 04.5 : ELECTRICITY, GAS AND OTHER FUELS 2015=100",
+      "observations": [
+        { "period": "2024-07-01", "value": 180.1 },
+        { "period": "2024-08-01", "value": 180.4 },
+        { "period": "2024-09-01", "value": 180.8 },
+        { "period": "2024-10-01", "value": 181.0 },
+        { "period": "2024-11-01", "value": 181.2 },
+        { "period": "2024-12-01", "value": 181.5 }
+      ]
+    },
+    {
+      "nativeId": "DKC6",
+      "title": "CPI INDEX: Excluding Energy, food, alcoholic beverages & tobacco 2015=100",
+      "observations": [
+        { "period": "2024-07-01", "value": 130.1 },
+        { "period": "2024-08-01", "value": 130.4 },
+        { "period": "2024-09-01", "value": 130.7 },
+        { "period": "2024-10-01", "value": 131.0 },
+        { "period": "2024-11-01", "value": 131.2 },
+        { "period": "2024-12-01", "value": 131.5 }
+      ]
+    }
+  ]
+}

@@ -21,7 +21,13 @@
     "load:us": "tsx src/cli/load-us.ts",
     "check:freshness": "tsx src/cli/freshness.ts",
     "load:au:live": "tsx src/cli/load-au.ts --live",
-    "load:us:live": "tsx src/cli/load-us.ts --live"
+    "load:us:live": "tsx src/cli/load-us.ts --live",
+    "load:uk": "tsx src/cli/load-uk.ts",
+    "load:ca": "tsx src/cli/load-ca.ts",
+    "load:eu": "tsx src/cli/load-eu.ts",
+    "load:uk:live": "tsx src/cli/load-uk.ts --live",
+    "load:ca:live": "tsx src/cli/load-ca.ts --live",
+    "load:eu:live": "tsx src/cli/load-eu.ts --live"
   },
   "dependencies": {
     "drizzle-orm": "^0.39.3",

@@ -5,6 +5,18 @@ import {
   parseBlsApiSeriesData,
   parseBlsHtmlSeriesTable,
 } from "../src/loaders/fetch-us-bls.js";
+import {
+  onsMonthToPeriod,
+  parseOnsTimeseriesMonths,
+} from "../src/loaders/fetch-uk-ons.js";
+import {
+  nativeIdToVectorId,
+  parseStatcanVectorPoints,
+} from "../src/loaders/fetch-ca-statcan.js";
+import {
+  geoFromNativeId,
+  parseEurostatHicpTsv,
+} from "../src/loaders/fetch-eu-hicp.js";
 
 describe("ABS CPI CSV parser", () => {
   it("parses monthly All groups rows into YYYY-MM-01", () => {
@@ -51,5 +63,62 @@ describe("BLS parsers", () => {
     expect(obs.find((o) => o.period === "2025-10-01")).toBeUndefined();
     expect(obs.find((o) => o.period === "2026-08-01")?.value).toBe(334.98);
     expect(obs.find((o) => o.period === "2025-09-01")?.value).toBe(324.8);
+  });
+});
+
+describe("ONS timeseries parser", () => {
+  it("maps month name + year to YYYY-MM-01", () => {
+    expect(onsMonthToPeriod({ year: "2026", month: "July" })).toBe("2026-07-01");
+    expect(onsMonthToPeriod({ year: "2026", month: "May" })).toBe("2026-05-01");
+    expect(onsMonthToPeriod({ year: "2026" })).toBeNull();
+  });
+
+  it("parses monthly rows and respects startPeriod", () => {
+    const obs = parseOnsTimeseriesMonths(
+      [
+        { year: "2024", month: "December", value: "134.7" },
+        { year: "2025", month: "January", value: "135.0" },
+        { year: "2025", month: "February", value: "bad" },
+      ],
+      { startPeriod: "2025-01-01" },
+    );
+    expect(obs).toEqual([{ period: "2025-01-01", value: 135 }]);
+  });
+});
+
+describe("StatCan WDS parser", () => {
+  it("strips v prefix from vector native ids", () => {
+    expect(nativeIdToVectorId("v41690973")).toBe(41690973);
+    expect(nativeIdToVectorId("41690973")).toBe(41690973);
+  });
+
+  it("parses refPer points into first-of-month ObsPoint[]", () => {
+    const obs = parseStatcanVectorPoints([
+      { refPer: "2024-11-01", value: 161.7 },
+      { refPer: "2024-12-01", value: "162.0" },
+      { refPer: "2024-10", value: 161.4 },
+    ]);
+    expect(obs).toEqual([
+      { period: "2024-10-01", value: 161.4 },
+      { period: "2024-11-01", value: 161.7 },
+      { period: "2024-12-01", value: 162 },
+    ]);
+  });
+});
+
+describe("Eurostat HICP TSV parser", () => {
+  it("extracts geo from native id", () => {
+    expect(geoFromNativeId("prc_hicp_midx.M.I15.CP00.EU27_2020")).toBe("EU27_2020");
+    expect(geoFromNativeId("prc_hicp_midx.M.I15.CP00.EA20")).toBe("EA20");
+  });
+
+  it("parses wide TSV into per-geo monthly observations", () => {
+    const tsv = "freq,unit,coicop,geo\\TIME_PERIOD\t2024-11\t2024-12\nM,I15,CP00,EU27_2020\t130.44\t130.84\nM,I15,CP00,EA20\t126.63\t127.08\n";
+    const byGeo = parseEurostatHicpTsv(tsv);
+    expect(byGeo.get("EU27_2020")).toEqual([
+      { period: "2024-11-01", value: 130.44 },
+      { period: "2024-12-01", value: 130.84 },
+    ]);
+    expect(byGeo.get("EA20")?.at(-1)).toEqual({ period: "2024-12-01", value: 127.08 });
   });
 });
