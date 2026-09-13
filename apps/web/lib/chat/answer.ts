@@ -24,6 +24,7 @@ export interface StatCard {
 export interface StatCardsPart {
   type: "stat_cards";
   title?: string;
+  seriesId?: string;
   cards: StatCard[];
   source?: string;
   period?: string;
@@ -61,6 +62,7 @@ export interface BarPart {
 export interface TablePart {
   type: "table";
   title: string;
+  seriesId?: string;
   columns: string[];
   rows: Array<Array<string | number>>;
   source?: string;

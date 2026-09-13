@@ -199,6 +199,7 @@ function latestStatCards(
   return {
     type: "stat_cards",
     title: `${SERIES_LABEL[seriesId] ?? seriesId} latest`,
+    seriesId,
     cards: [
       {
         label: "Latest index",
@@ -231,6 +232,7 @@ function yoyTable(seriesId: string, data: CpiLookupResult): TablePart {
   return {
     type: "table",
     title: `${SERIES_LABEL[seriesId] ?? seriesId} — levels & MoM`,
+    seriesId,
     columns: ["Period", "Index", "MoM"],
     rows,
     source: data.source,
