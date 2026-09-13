@@ -1,6 +1,6 @@
 # @inflationmonitor/data
 
-TypeScript package: CPI schema, SQL migrations (Drizzle), AU ABS + US BLS loaders, freshness checks.
+TypeScript package: CPI schema, SQL migrations (Drizzle), AU ABS + US BLS + UK ONS + CA StatCan + EU/EA Eurostat loaders, freshness checks.
 
 ## Environment
 
@@ -24,6 +24,9 @@ From repo root (workspaces) or this package:
 | `migrate:generate` | Generate SQL from Drizzle schema |
 | `load:au` | Load AU ABS CPI fixture |
 | `load:us` | Load US BLS CPI-U fixture |
+| `load:uk` / `load:uk:live` | Load UK ONS CPI |
+| `load:ca` / `load:ca:live` | Load CA StatCan CPI |
+| `load:eu` / `load:eu:live` | Load EU27+EA20 HICP |
 | `check:freshness` | Print freshness report |
 | `build` | Compile TypeScript to `dist/` |
 
