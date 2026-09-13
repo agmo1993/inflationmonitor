@@ -14,6 +14,11 @@ import {
 import type { UsageStore } from "../metering/usage-store";
 import { buildAnswer, type Answer } from "./answer";
 import { runCpiFixtureTools } from "./tools/cpi-fixtures";
+import {
+  runCpiQueryTools,
+  shouldUseCpiQueryTools,
+  type CpiLookup,
+} from "./tools/cpi-query";
 
 export interface ChatHandlerDeps {
   auth?: typeof resolveAuthSession;
@@ -29,6 +34,8 @@ export interface ChatHandlerDeps {
   now?: () => Date;
   /** Skip fixture tools (unit tests that only care about LLM/metering). */
   skipTools?: boolean;
+  /** Optional live/injected CPI catalog lookup (GB/CA/EU/EA). */
+  cpiLookup?: CpiLookup;
 }
 
 export interface ChatSuccessBody {
@@ -148,7 +155,16 @@ export async function handleChatRequest(
     };
   }
 
-  const toolParts = deps.skipTools ? [] : runCpiFixtureTools(message);
+  let toolParts: Awaited<ReturnType<typeof runCpiQueryTools>> = [];
+  if (!deps.skipTools) {
+    if (shouldUseCpiQueryTools(message)) {
+      toolParts = await runCpiQueryTools(message, {
+        lookup: deps.cpiLookup,
+      });
+    } else {
+      toolParts = runCpiFixtureTools(message);
+    }
+  }
 
   const llmResult = await llm.chat({
     messages: [
