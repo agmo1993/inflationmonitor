@@ -1,0 +1,31 @@
+{
+  "source": "eurostat",
+  "releaseLabel": "2024-12",
+  "releasedAt": "2025-01-17T00:00:00.000Z",
+  "series": [
+    {
+      "nativeId": "prc_hicp_midx.M.I15.CP00.EU27_2020",
+      "title": "HICP All-items (EU27_2020, 2015=100)",
+      "observations": [
+        { "period": "2024-07-01", "value": 126.4 },
+        { "period": "2024-08-01", "value": 126.7 },
+        { "period": "2024-09-01", "value": 127.0 },
+        { "period": "2024-10-01", "value": 127.3 },
+        { "period": "2024-11-01", "value": 127.6 },
+        { "period": "2024-12-01", "value": 127.9 }
+      ]
+    },
+    {
+      "nativeId": "prc_hicp_midx.M.I15.CP00.EA20",
+      "title": "HICP All-items (EA20, 2015=100)",
+      "observations": [
+        { "period": "2024-07-01", "value": 124.8 },
+        { "period": "2024-08-01", "value": 125.1 },
+        { "period": "2024-09-01", "value": 125.4 },
+        { "period": "2024-10-01", "value": 125.7 },
+        { "period": "2024-11-01", "value": 126.0 },
+        { "period": "2024-12-01", "value": 126.3 }
+      ]
+    }
+  ]
+}

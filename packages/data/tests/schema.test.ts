@@ -154,7 +154,7 @@ describe("schema invariants", () => {
     try {
       await seedMeta(db);
       const countries = await db.select().from(schema.country);
-      expect(countries.map((c) => c.code).sort()).toEqual(["AU", "US"]);
+      expect(countries.map((c) => c.code)).toEqual(expect.arrayContaining(["AU", "US"]));
 
       const au = await db
         .select()

@@ -1,0 +1,55 @@
+{
+  "source": "statcan",
+  "releaseLabel": "2024-12",
+  "releasedAt": "2025-01-21T00:00:00.000Z",
+  "series": [
+    {
+      "nativeId": "v41690973",
+      "title": "CPI All-items, Canada",
+      "observations": [
+        { "period": "2024-07-01", "value": 160.5 },
+        { "period": "2024-08-01", "value": 160.8 },
+        { "period": "2024-09-01", "value": 161.1 },
+        { "period": "2024-10-01", "value": 161.4 },
+        { "period": "2024-11-01", "value": 161.7 },
+        { "period": "2024-12-01", "value": 162.0 }
+      ]
+    },
+    {
+      "nativeId": "v41690974",
+      "title": "CPI Food, Canada",
+      "observations": [
+        { "period": "2024-07-01", "value": 188.0 },
+        { "period": "2024-08-01", "value": 188.3 },
+        { "period": "2024-09-01", "value": 188.6 },
+        { "period": "2024-10-01", "value": 188.9 },
+        { "period": "2024-11-01", "value": 189.2 },
+        { "period": "2024-12-01", "value": 189.5 }
+      ]
+    },
+    {
+      "nativeId": "v41691050",
+      "title": "CPI Shelter, Canada",
+      "observations": [
+        { "period": "2024-07-01", "value": 185.0 },
+        { "period": "2024-08-01", "value": 185.4 },
+        { "period": "2024-09-01", "value": 185.8 },
+        { "period": "2024-10-01", "value": 186.2 },
+        { "period": "2024-11-01", "value": 186.6 },
+        { "period": "2024-12-01", "value": 187.0 }
+      ]
+    },
+    {
+      "nativeId": "v41691239",
+      "title": "CPI Energy, Canada",
+      "observations": [
+        { "period": "2024-07-01", "value": 200.0 },
+        { "period": "2024-08-01", "value": 199.5 },
+        { "period": "2024-09-01", "value": 199.0 },
+        { "period": "2024-10-01", "value": 198.5 },
+        { "period": "2024-11-01", "value": 198.0 },
+        { "period": "2024-12-01", "value": 197.5 }
+      ]
+    }
+  ]
+}
