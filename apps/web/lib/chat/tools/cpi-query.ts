@@ -1,5 +1,5 @@
 /**
- * Live CPI query tools for GB/CA/EU/EA catalog series.
+ * Live CPI query tools for GB/CA/EU/EA/AU/US catalog series.
  * Prefer Neon via DATABASE_URL; tests inject `lookup`.
  */
 
@@ -14,7 +14,7 @@ export type CpiLookupResult = {
 
 export type CpiLookup = (seriesId: string) => Promise<CpiLookupResult | null>;
 
-/** Locked catalog accept-list (Data PR #16). */
+/** Locked catalog accept-list (Data PR #16 / AU+US Neon). */
 export const CPI_CATALOG_IDS = {
   gbAll: "gb.ons.cpi.all_items",
   gbFood: "gb.ons.cpi.food",
@@ -26,6 +26,12 @@ export const CPI_CATALOG_IDS = {
   caEnergy: "ca.statcan.cpi.energy",
   euAll: "eu.eurostat.hicp.all_items",
   eaAll: "ea.eurostat.hicp.all_items",
+  auAll: "au.abs.cpi.all_groups",
+  usAll: "us.bls.cpiu.all_items",
+  usFood: "us.bls.cpiu.food",
+  usEnergy: "us.bls.cpiu.energy",
+  usShelter: "us.bls.cpiu.shelter",
+  usCore: "us.bls.cpiu.all_items_less_food_energy",
 } as const;
 
 export type CpiQueryIntent =
@@ -51,6 +57,12 @@ const SOURCE_LABEL: Record<string, string> = {
   [CPI_CATALOG_IDS.caEnergy]: "StatCan",
   [CPI_CATALOG_IDS.euAll]: "Eurostat",
   [CPI_CATALOG_IDS.eaAll]: "Eurostat",
+  [CPI_CATALOG_IDS.auAll]: "ABS",
+  [CPI_CATALOG_IDS.usAll]: "BLS",
+  [CPI_CATALOG_IDS.usFood]: "BLS",
+  [CPI_CATALOG_IDS.usEnergy]: "BLS",
+  [CPI_CATALOG_IDS.usShelter]: "BLS",
+  [CPI_CATALOG_IDS.usCore]: "BLS",
 };
 
 const SERIES_LABEL: Record<string, string> = {
@@ -64,6 +76,12 @@ const SERIES_LABEL: Record<string, string> = {
   [CPI_CATALOG_IDS.caEnergy]: "Canada CPI Energy",
   [CPI_CATALOG_IDS.euAll]: "EU27 HICP All-items",
   [CPI_CATALOG_IDS.eaAll]: "EA20 HICP All-items",
+  [CPI_CATALOG_IDS.auAll]: "AU CPI All groups",
+  [CPI_CATALOG_IDS.usAll]: "US CPI-U All items",
+  [CPI_CATALOG_IDS.usFood]: "US CPI-U Food",
+  [CPI_CATALOG_IDS.usEnergy]: "US CPI-U Energy",
+  [CPI_CATALOG_IDS.usShelter]: "US CPI-U Shelter",
+  [CPI_CATALOG_IDS.usCore]: "US CPI-U less food and energy",
 };
 
 function ymFromPeriod(period: string): string {
@@ -125,6 +143,19 @@ function pickSeriesId(intent: CpiQueryIntent, message: string): string | null {
   }
   if (intent === "latest_eu") return CPI_CATALOG_IDS.euAll;
   if (intent === "latest_ea") return CPI_CATALOG_IDS.eaAll;
+  if (intent === "latest_au") {
+    // Catalog currently exposes headline All groups only.
+    return CPI_CATALOG_IDS.auAll;
+  }
+  if (intent === "latest_us") {
+    // Core / less-food-and-energy before bare "food" (message may contain both).
+    if (/core|excluding|less food/.test(m)) return CPI_CATALOG_IDS.usCore;
+    if (/shelter|housing|rent/.test(m)) return CPI_CATALOG_IDS.usShelter;
+    if (/food/.test(m)) return CPI_CATALOG_IDS.usFood;
+    if (/energy|fuel|gasoline|gas|electricity/.test(m))
+      return CPI_CATALOG_IDS.usEnergy;
+    return CPI_CATALOG_IDS.usAll;
+  }
   return null;
 }
 
@@ -255,8 +286,8 @@ async function resolveLookup(opts?: { lookup?: CpiLookup }): Promise<CpiLookup> 
 }
 
 /**
- * Build generative UI parts for GB/CA/EU/EA (and pass-through AU/US intents as empty
- * so the handler can keep fixture tools for those).
+ * Build generative UI parts for GB/CA/EU/EA/AU/US catalog series.
+ * Compare/yoy/chart/generic return empty (caller may use other tools).
  */
 export async function runCpiQueryTools(
   message: string,
@@ -265,11 +296,7 @@ export async function runCpiQueryTools(
   const intent = detectCpiIntent(message);
   const seriesId = pickSeriesId(intent, message);
 
-  // AU/US/generic handled by fixtures in the handler — return empty so caller
-  // can fall back. (Q4/Q6: UK must not emit AU fixtures from this module.)
   if (
-    intent === "latest_au" ||
-    intent === "latest_us" ||
     intent === "generic" ||
     intent === "compare" ||
     intent === "yoy" ||
@@ -280,9 +307,10 @@ export async function runCpiQueryTools(
       intent === "latest_gb" ||
       intent === "latest_ca" ||
       intent === "latest_eu" ||
-      intent === "latest_ea"
+      intent === "latest_ea" ||
+      intent === "latest_au" ||
+      intent === "latest_us"
     ) {
-      // seriesId missing unexpectedly
       return unavailableParts(message);
     }
     return [];
@@ -294,7 +322,7 @@ export async function runCpiQueryTools(
     return unavailableParts(message);
   }
 
-  // Ensure source label matches QA needles (ONS / StatCan / Eurostat)
+  // Ensure source label matches QA needles (ONS / StatCan / Eurostat / ABS / BLS)
   const source = SOURCE_LABEL[seriesId] ?? data.source;
   const normalized: CpiLookupResult = { ...data, source };
 
@@ -305,13 +333,39 @@ export async function runCpiQueryTools(
   ];
 }
 
-/** True when message should use catalog query tools (not AU/US fixtures). */
+/**
+ * True when message should use catalog query tools (not AU/US fixtures).
+ * GB/CA/EU/EA/AU/US use query tools. Handler may fall back to AU/US fixtures
+ * when query returns empty/unavailable and neither cpiLookup nor DATABASE_URL
+ * is present (keeps Q6 green in CI).
+ */
 export function shouldUseCpiQueryTools(message: string): boolean {
   const intent = detectCpiIntent(message);
   return (
     intent === "latest_gb" ||
     intent === "latest_ca" ||
     intent === "latest_eu" ||
-    intent === "latest_ea"
+    intent === "latest_ea" ||
+    intent === "latest_au" ||
+    intent === "latest_us"
+  );
+}
+
+/** True when intent is AU or US (fixture fallback candidates). */
+export function isAuUsCpiIntent(message: string): boolean {
+  const intent = detectCpiIntent(message);
+  return intent === "latest_au" || intent === "latest_us";
+}
+
+/** Query parts that are empty or only "unavailable" text (no catalog series). */
+export function isCpiQueryUnavailable(parts: AnswerPart[]): boolean {
+  if (!parts.length) return true;
+  return parts.every(
+    (p) =>
+      p.type === "text" &&
+      typeof (p as { text?: string }).text === "string" &&
+      /unavailable|no live|not available|DATABASE_URL|lookup/i.test(
+        (p as { text: string }).text,
+      ),
   );
 }

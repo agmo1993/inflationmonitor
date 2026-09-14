@@ -15,6 +15,8 @@ import type { UsageStore } from "../metering/usage-store";
 import { buildAnswer, type Answer } from "./answer";
 import { runCpiFixtureTools } from "./tools/cpi-fixtures";
 import {
+  isAuUsCpiIntent,
+  isCpiQueryUnavailable,
   runCpiQueryTools,
   shouldUseCpiQueryTools,
   type CpiLookup,
@@ -34,7 +36,7 @@ export interface ChatHandlerDeps {
   now?: () => Date;
   /** Skip fixture tools (unit tests that only care about LLM/metering). */
   skipTools?: boolean;
-  /** Optional live/injected CPI catalog lookup (GB/CA/EU/EA). */
+  /** Optional live/injected CPI catalog lookup (GB/CA/EU/EA/AU/US). */
   cpiLookup?: CpiLookup;
 }
 
@@ -161,6 +163,16 @@ export async function handleChatRequest(
       toolParts = await runCpiQueryTools(message, {
         lookup: deps.cpiLookup,
       });
+      // AU/US: keep fixtures when no injected lookup and no Neon DATABASE_URL
+      // (CI / Q6). Never fall back when cpiLookup was provided.
+      if (
+        isAuUsCpiIntent(message) &&
+        !deps.cpiLookup &&
+        !process.env.DATABASE_URL &&
+        isCpiQueryUnavailable(toolParts)
+      ) {
+        toolParts = runCpiFixtureTools(message);
+      }
     } else {
       toolParts = runCpiFixtureTools(message);
     }
